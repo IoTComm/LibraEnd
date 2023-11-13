@@ -21,29 +21,22 @@ class MemberRoute {
     lateinit var db: DBHandler
 
     @PostMapping("signup")
-    fun signUp(@RequestBody body: LoginInputForm, response: HttpServletResponse): BasicReturnForm {
-        val (id, pw) = body
-
-        val result = runCatching { db.registerUser(id, pw) }
+    fun signUp(@RequestBody body: LoginInputForm, response: HttpServletResponse): BasicReturnForm =
+        runCatching { db.registerUser(body.id, body.pw) }
             .getOrElse { withError(it) }
+            .also { response.status = it.code }
 
-
-        response.status = result.code
-        return result
-    }
 
     @PostMapping("login")
-    fun login(@RequestBody body: LoginInputForm, response: HttpServletResponse): BasicReturnForm {
-        val (id, pw) = body
-        val result = kotlin.runCatching { db.userLogin(id, pw) }
+    fun login(@RequestBody body: LoginInputForm, response: HttpServletResponse): BasicReturnForm =
+        runCatching { db.userLogin(body.id, body.pw) }
             .getOrElse { UuidReturnForm(withError(it), null) }
+            .also {
+                response.status = it.result.code
 
-        response.status = result.result.code
+                if (it.result.code == 200)
+                    response.addCookie(getCookie(it.uuid!!))
+            }.result
 
-        if (result.result.code == 200)
-            response.addCookie(getCookie(result.uuid!!))
-
-        return result.result
-    }
 
 }

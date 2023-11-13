@@ -22,21 +22,15 @@ class LibraryRoute {
         @CookieValue(COOKIE_SESS_KEY) sessId: String,
         @RequestBody body: ReservationReturnForm,
         response: HttpServletResponse
-    ): BasicReturnForm {
-        val (seatId, startTime) = body
-        val result = kotlin.runCatching { db.libraryReservation(seatId, startTime, sessId) }
-            .getOrElse { withError(it) }
+    ): BasicReturnForm = runCatching { db.libraryReservation(body.seatId, body.startTime, sessId) }
+        .getOrElse { withError(it) }
+        .also { response.status = it.code }
 
-        response.status = result.code
-        return result
-    }
 
     @PostMapping("logout")
-    fun libraryLogout(@CookieValue(COOKIE_SESS_KEY) sessId: String, response: HttpServletResponse): BasicReturnForm {
-        val result = kotlin.runCatching { db.libraryLogout(sessId) }
+    fun libraryLogout(@CookieValue(COOKIE_SESS_KEY) sessId: String, response: HttpServletResponse): BasicReturnForm =
+        kotlin.runCatching { db.libraryLogout(sessId) }
             .getOrElse { withError(it) }
+            .also { response.status = it.code }
 
-        response.status = result.code
-        return result
-    }
 }
