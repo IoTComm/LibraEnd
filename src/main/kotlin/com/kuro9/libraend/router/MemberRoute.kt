@@ -1,24 +1,18 @@
 package com.kuro9.libraend.router
 
-import com.kuro9.libraend.API_PATH
 import com.kuro9.libraend.db.DBHandler
 import com.kuro9.libraend.db.type.BasicReturnForm
 import com.kuro9.libraend.db.type.UuidReturnForm
-import com.kuro9.libraend.getCookie
+import com.kuro9.libraend.router.config.API_PATH
+import com.kuro9.libraend.router.config.getCookie
 import com.kuro9.libraend.router.errorhandle.withError
 import com.kuro9.libraend.router.type.LoginInputForm
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Autowired
-import jakarta.servlet.http.Cookie
-import jakarta.websocket.RemoteEndpoint.Basic
 import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import java.sql.SQLException
-import java.sql.SQLTimeoutException
-import java.time.Duration
 
 @RestController
 @RequestMapping(API_PATH + "member/")
@@ -46,7 +40,7 @@ class MemberRoute {
 
         response.status = result.result.code
 
-        if(result.result.code == 200)
+        if (result.result.code == 200)
             response.addCookie(getCookie(result.uuid!!))
 
         return result.result

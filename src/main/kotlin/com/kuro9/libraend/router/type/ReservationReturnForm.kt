@@ -4,5 +4,5 @@ import java.sql.Timestamp
 
 data class ReservationReturnForm(
     val seatId: Int,
-    val startTime: Timestamp = Timestamp(System.currentTimeMillis())
+    val startTime: Timestamp = Timestamp(System.currentTimeMillis() + 10000)
 )

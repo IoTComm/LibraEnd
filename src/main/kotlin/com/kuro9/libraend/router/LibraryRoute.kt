@@ -1,9 +1,9 @@
 package com.kuro9.libraend.router
 
-import com.kuro9.libraend.API_PATH
-import com.kuro9.libraend.COOKIE_SESS_KEY
 import com.kuro9.libraend.db.DBHandler
 import com.kuro9.libraend.db.type.BasicReturnForm
+import com.kuro9.libraend.router.config.API_PATH
+import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
 import com.kuro9.libraend.router.errorhandle.withError
 import com.kuro9.libraend.router.type.ReservationReturnForm
 import jakarta.servlet.http.HttpServletResponse
