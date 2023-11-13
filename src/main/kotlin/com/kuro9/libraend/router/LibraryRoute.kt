@@ -5,7 +5,7 @@ import com.kuro9.libraend.db.type.BasicReturnForm
 import com.kuro9.libraend.router.config.API_PATH
 import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
 import com.kuro9.libraend.router.errorhandle.withError
-import com.kuro9.libraend.router.type.ReservationReturnForm
+import com.kuro9.libraend.router.type.ReservationInputForm
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
@@ -20,7 +20,7 @@ class LibraryRoute {
     @PostMapping("reservation", "login")
     fun reservation(
         @CookieValue(COOKIE_SESS_KEY) sessId: String,
-        @RequestBody body: ReservationReturnForm,
+        @RequestBody body: ReservationInputForm,
         response: HttpServletResponse
     ): BasicReturnForm = runCatching { db.libraryReservation(body.seatId, body.startTime, sessId) }
         .getOrElse { withError(it) }
