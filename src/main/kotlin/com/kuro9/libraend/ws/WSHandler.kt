@@ -10,21 +10,27 @@ import org.springframework.web.socket.handler.TextWebSocketHandler
 
 @Component
 class WSHandler : TextWebSocketHandler() {
-    private var masterNode: WebSocketSession? = null
+    private val masterNodes: MutableList<WebSocketSession> = mutableListOf()
 
     @Throws(Exception::class)
     override fun afterConnectionEstablished(session: WebSocketSession) {
 
-        val sessId = session.attributes[COOKIE_SESS_KEY] as? String
+        val sessId = getHttpSessionId(session)
 
-        TODO("세션id가 관리자가 아니라면 스킵/관리자라면 masterNode에 등록하기")
+        //TODO DB call
 
-        masterNode = session
+        if (TODO("세션id가 관리자가 아니라면 스킵/관리자라면 masterNode에 등록하기")) {
+            masterNodes.add(session)
+        }
+        else {
+            session.close(CloseStatus(403))
+            
+        }
     }
 
     @Throws(Exception::class)
     override fun afterConnectionClosed(session: WebSocketSession, status: CloseStatus) {
-        masterNode = null
+        masterNodes.remove(session)
     }
 
     @Throws(Exception::class)
@@ -43,7 +49,14 @@ class WSHandler : TextWebSocketHandler() {
         TODO("메시지 수신 핸들링")
     }
 
-    fun sendToClient(payload: String): Boolean {
-        return masterNode?.let { it.sendMessage(TextMessage(payload));true } ?: false
+    /**
+     * @return null at parse failed, blank string at no sess_id key
+     */
+    fun getHttpSessionId(session: WebSocketSession): String? {
+        return session.attributes[COOKIE_SESS_KEY] as? String
+    }
+
+    fun sendToClient(session: WebSocketSession, payload: String) {
+        return session.sendMessage(TextMessage(payload))
     }
 }
