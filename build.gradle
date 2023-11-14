@@ -39,6 +39,11 @@ dependencies {
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1'
+
+	// MQTT
+	implementation'org.springframework.boot:spring-boot-starter-integration'
+	implementation'org.springframework.integration:spring-integration-mqtt'
+	implementation'org.springframework.integration:spring-integration-jmx'
 }
 
 tasks.withType(KotlinCompile) {

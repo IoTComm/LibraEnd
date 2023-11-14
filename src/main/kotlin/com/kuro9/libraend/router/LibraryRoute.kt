@@ -17,7 +17,7 @@ class LibraryRoute {
     @Autowired
     lateinit var db: DBHandler
 
-    @PostMapping("reservation", "login")
+    @PostMapping("login")
     fun reservation(
         @CookieValue(COOKIE_SESS_KEY) sessId: String,
         @RequestBody body: ReservationInputForm,
