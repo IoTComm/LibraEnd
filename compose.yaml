@@ -8,12 +8,13 @@ services:
       - 'MYSQL_USER=myuser'
     ports:
       - '3306'
-  mqtt:
-    image: eclipse-mosquitto:1.6.4
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - /workspaces/docker-workspaces/mqtt/config:/mosquitto/config
-      - /workspaces/docker-workspaces/mqtt/data:/mosquitto/data
-      - /workspaces/docker-workspaces/mqtt/log:/mosquitto/log
+#  mqtt:
+#    image: eclipse-mosquitto:2.0.15
+#    ports:
+#      - "1883:1883"
+#      - "9001:9001"
+#    volumes:
+#      - ./src/main/resources/mqtt/config/mqtt.conf:/mosquitto/config/mosquitto.conf
+#      - ./src/main/resources/mqtt/config/passwd:/mosquitto/config/passwd
+##      - /workspaces/docker-workspaces/mqtt/data:/mosquitto/data
+##      - /workspaces/docker-workspaces/mqtt/log:/mosquitto/log
