@@ -2,7 +2,7 @@
 
 > [Link](https://iotcomm.github.io/LibraEnd/)
 
-### WebSocket Form
+### WebSocket
 
 > Only admin can connect/use WS session.
 
