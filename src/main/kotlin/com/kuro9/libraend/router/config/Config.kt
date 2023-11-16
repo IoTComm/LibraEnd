@@ -2,7 +2,7 @@ package com.kuro9.libraend.router.config
 
 import jakarta.servlet.http.Cookie
 
-const val ROOT_PATH = "/iot-comm/"
+const val ROOT_PATH = ""
 const val API_PATH = ROOT_PATH + "api/"
 const val COOKIE_SESS_KEY = "sess_id"
 

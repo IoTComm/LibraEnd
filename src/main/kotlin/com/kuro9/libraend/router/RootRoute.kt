@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping(ROOT_PATH)
 class RootRoute {
-    @GetMapping
+    @GetMapping("test")
     fun index(): Pair<String, String> {
         return Pair("Hello", "World")
     }
