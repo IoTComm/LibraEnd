@@ -16,9 +16,43 @@
 
 #### `POST` /member/signup
 
+<hr>
+
 > 회원가입
 
+##### Parameters
+
+| Name | Located in       | Description | Required | Schema |
+|------|------------------|-------------|----------|--------|
+| id   | application/json | ID          | Yes      | string |
+| pw   | application/json | Password    | Yes      | string |
+
+> Example
+> ```json
+> {
+>   "id": 2100123,
+>   "pw": "q1w2e3r4!"
+> }
+> ```
+
 ##### Responses
+
+###### Type
+
+| Name        | Schema |
+|-------------|--------|
+| code        | int    |
+| description | string |
+
+> Example
+> ```json
+> {
+>   "code": 200,
+>   "description": "OK"
+> }
+> ```
+
+###### Response Code
 
 | Code | Description         |
 |------|---------------------|
@@ -27,9 +61,45 @@
 
 #### `POST` /member/login
 
+<hr>
+
 > 로그인
 
+##### Parameters
+
+| Name | Located in       | Description | Required | Schema |
+|------|------------------|-------------|----------|--------|
+| id   | application/json | ID          | Yes      | string |
+| pw   | application/json | Password    | Yes      | string |
+
+> Example
+> ```json
+> {
+>   "id": 2100123,
+>   "pw": "q1w2e3r4!"
+> }
+> ```
+
 ##### Responses
+
+###### Type
+
+| Name        | Schema |
+|-------------|--------|
+| code        | int    |
+| description | string |
+
+- **This API Call Set Access Key in Client's Cookie**
+
+> Example
+> ```json
+> {
+>   "code": 200,
+>   "description": "OK"
+> }
+> ```
+
+###### Response Code
 
 | Code | Description       |
 |------|-------------------|
@@ -40,10 +110,71 @@
 
 #### `GET` `POST` /library/seat-list
 
+<hr>
+
 > `GET`  현재 좌석 정보 출력   
 > `POST`  현재 좌석 정보 검색
 
+##### Parameters
+
+| Name     | Located in       | Description            | Required | Schema |
+|----------|------------------|------------------------|----------|--------|
+| seat_id  | application/json | seat id to find        | No       | int    |
+| is_using | application/json | find using/!using seat | No       | bool   |
+| desk_id  | application/json | find seat with desk id | No       | int    |
+
+> Example
+> ```json
+> {
+>   "desk_id": 1,
+>   "is_using": true
+> }
+> ```
+
 ##### Responses
+
+###### Type
+
+| Name        | Schema           |
+|-------------|------------------|
+| code        | int              |
+| description | string           |
+| data        | List\<SeatTable> |
+
+###### SeatTable Type
+
+| Name     | Schema |
+|----------|--------|
+| seat_id  | int    |
+| is_using | bool   |
+| desk_id  | int    |
+
+> Example
+> ```json
+> {
+>   "code": 200,
+>   "description": "OK",
+>   "data": [
+>     {
+>       "seat_id": 1,
+>       "is_using": false,
+>      "desk_id": 1
+>     },
+>     {
+>       "seat_id": 2,
+>       "is_using": true,
+>       "desk_id": 1
+>     },
+>     {
+>       "seat_id": 3,
+>       "is_using": true,
+>       "desk_id": 2
+>     }
+>   ]
+> }
+> ```
+
+###### Response Code
 
 | Code | Description     |
 |------|-----------------|
@@ -51,13 +182,15 @@
 
 #### `POST` /library/logout
 
+<hr>
+
 > 사용종료 요청
 
 ##### Parameters
 
 | Name    | Located in | Description | Required | Schema |
 |---------|------------|-------------|----------|--------|
-| sess_id | cookie     |             | Yes      | string |
+| sess_id | cookie     | Access Key  | Yes      | string |
 
 ##### Responses
 
@@ -67,15 +200,34 @@
 
 #### `POST` /library/login
 
+<hr>
 > 자리에 앉고 사용시작 요청
 
 ##### Parameters
 
-| Name    | Located in | Description | Required | Schema |
-|---------|------------|-------------|----------|--------|
-| sess_id | cookie     |             | Yes      | string |
+| Name    | Located in       | Description    | Required | Schema |
+|---------|------------------|----------------|----------|--------|
+| sess_id | cookie           | Access Key     | Yes      | string |
+| seat_id | application/json | seat id to use | Yes      | string |
 
 ##### Responses
+
+###### Type
+
+| Name        | Schema |
+|-------------|--------|
+| code        | int    |
+| description | string |
+
+> Example
+> ```json
+> {
+>   "code": 200,
+>   "description": "OK"
+> }
+> ```
+
+###### Response Code
 
 | Code | Description                                       |
 |------|---------------------------------------------------|
@@ -90,15 +242,52 @@
 
 #### `POST` /admin/sudo-logout
 
+<hr>
+
 > 강제 로그아웃
 
 ##### Parameters
 
-| Name    | Located in | Description | Required | Schema |
-|---------|------------|-------------|----------|--------|
-| sess_id | cookie     |             | Yes      | string |
+| Name    | Located in       | Description             | Required | Schema |
+|---------|------------------|-------------------------|----------|--------|
+| sess_id | cookie           | Access Key              | Yes      | string |
+| seat_id | application/json | seat id to force-logout | Yes      | string |
 
 ##### Responses
+
+###### Type
+
+| Name        | Schema             |
+|-------------|--------------------|
+| code        | int                |
+| description | string             |
+| data        | LastUsedReturnForm |
+
+###### LastUsedReturnForm Type
+
+| Name              | Schema |
+|-------------------|--------|
+| last_used_user_id | int    |
+
+> Example
+> ```json
+> {
+>   "code": 200,
+>   "description": "OK",
+>   "data": {
+>     "last_used_user_id": 2100123
+>   }
+> }
+> ```
+>  ```json
+> {
+>   "code": 403,
+>   "description": "Access Denied",
+>   "data": null
+> }
+> ```
+
+###### Response Code
 
 | Code | Description                                   |
 |------|-----------------------------------------------|
@@ -113,10 +302,10 @@
 
 #### Send Data
 
-| Field     | DataType |
-|-----------|----------|
-| seat_id   | Int      |
-| is_active | Boolean  |
+| Name      | Schema |
+|-----------|--------|
+| seat_id   | int    |
+| is_active | bool   |
 
 > Example
 > ```json
@@ -131,10 +320,10 @@
 
 > Only on timeout situation.
 
-| Field       | DataType |
-|-------------|----------|
-| seat_id     | Int      |
-| description | String   |
+| Name        | Schema |
+|-------------|--------|
+| seat_id     | int    |
+| description | string |
 
 > Example
 > ```json
