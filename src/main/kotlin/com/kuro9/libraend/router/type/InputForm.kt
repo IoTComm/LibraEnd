@@ -11,6 +11,7 @@ data class LoginInputForm(
 
 @JsonNaming(SnakeCaseStrategy::class)
 data class ReservationInputForm(
-    val seatId: Int,
+    val seatId: Int
+) {
     val startTime: Timestamp = Timestamp(System.currentTimeMillis() + 10000)
-)
+}

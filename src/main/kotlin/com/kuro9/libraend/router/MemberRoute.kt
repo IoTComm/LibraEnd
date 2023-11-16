@@ -2,7 +2,6 @@ package com.kuro9.libraend.router
 
 import com.kuro9.libraend.db.DBHandler
 import com.kuro9.libraend.db.type.BasicReturnForm
-import com.kuro9.libraend.db.type.UuidReturnForm
 import com.kuro9.libraend.router.config.API_PATH
 import com.kuro9.libraend.router.config.getCookie
 import com.kuro9.libraend.router.errorhandle.withError
@@ -21,22 +20,21 @@ class MemberRoute {
     lateinit var db: DBHandler
 
     @PostMapping("signup")
-    fun signUp(@RequestBody body: LoginInputForm, response: HttpServletResponse): BasicReturnForm =
+    fun signUp(@RequestBody body: LoginInputForm, response: HttpServletResponse): BasicReturnForm<Nothing> =
         runCatching { db.registerUser(body.id, body.pw) }
             .getOrElse { withError(it) }
             .also { response.status = it.code }
 
 
     @PostMapping("login")
-    fun login(@RequestBody body: LoginInputForm, response: HttpServletResponse): BasicReturnForm =
+    fun login(@RequestBody body: LoginInputForm, response: HttpServletResponse): BasicReturnForm<Nothing> =
         runCatching { db.userLogin(body.id, body.pw) }
-            .getOrElse { UuidReturnForm(withError(it), null) }
+            .getOrElse { withError(it) }
             .also {
-                response.status = it.result.code
+                response.status = it.code
 
-                if (it.result.code == 200)
-                    response.addCookie(getCookie(it.uuid!!))
-            }.result
-
-
+                if (it.code == 200)
+                    response.addCookie(getCookie(it.data!!.sessId))
+                it.data = null
+            }.getBasicForm()
 }
