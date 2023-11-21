@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Seat List</title>
+
+</head>
+<body>
+<h1>Seat List</h1>
+<h3 id="userid"></h3>
+
+<table border="1">
+    <thead>
+    <tr>
+        <th>Seat ID</th>
+        <th>Is Using</th>
+        <th>Desk ID</th>
+        <th>선택</th>
+    </tr>
+    </thead>
+    <tbody id="seatTableBody">
+    <!-- Data will be dynamically added here -->
+    </tbody>
+</table>
+
+<script>
+    async function request() {
+        const response = await fetch('../api/library/seat-list',
+            {
+                method: 'GET',
+            });
+        const data = await response.json();
+        console.log(data)
+
+        const tableBody = document.getElementById("seatTableBody");
+
+        data.data.forEach(seat => {
+            const row = document.createElement("tr");
+
+            const seatIdCell = document.createElement("td");
+            seatIdCell.textContent = seat.seat_id;
+            row.appendChild(seatIdCell);
+
+            const isUsingCell = document.createElement("td");
+            isUsingCell.textContent = seat.is_using ? "Yes" : "No";
+            row.appendChild(isUsingCell);
+
+            const deskIdCell = document.createElement("td");
+            deskIdCell.textContent = seat.desk_id;
+            row.appendChild(deskIdCell);
+
+            const startUsing = document.createElement("button");
+            startUsing.textContent = "사용 시작"
+            startUsing.disabled = seat.is_using
+            startUsing.onclick = (() => {
+                const isConfirmed = confirm(`${seat.seat_id}번 좌석을 사용하시겠습니까?`);
+
+                // Check the user's choice
+                if (isConfirmed) {
+                    const formData = {
+                        seat_id: seat.seat_id
+                    };
+
+
+                    (async () => {
+                        const response = await fetch('../api/library/login',
+                            {
+                                method: 'POST',
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify(formData)
+                            });
+                        const data = await response.json();
+                        console.log(data)
+                        switch (response.status) {
+                            case 200:
+                                alert(`${seat.seat_id}번 좌석 사용 시작됨!`);
+                                break;
+                            case 401:
+                                alert("사용자 로그인 정보가 유효하지 않습니다.");
+                                window.location.href = "../member/login"
+                                break;
+                            case 403:
+                                alert("이미 다른 좌석을 사용하고 있습니다. ");
+                                break;
+                            case 404:
+                                alert("유효하지 않은 좌석 번호입니다. ");
+                                break;
+                            case 409:
+                                alert("이미 사용되고 있는 좌석입니다. ");
+                                break;
+                            default:
+                                alert("예상하지 못한 에러 발생.")
+                                break;
+                        }
+
+                        location.reload()
+                    })();
+                } else {
+                    // User clicked "Cancel" in the confirmation dialog
+                    // alert("Operation canceled");
+                }
+            });
+            row.appendChild(startUsing)
+
+            const endUsing = document.createElement("button");
+            endUsing.textContent = "사용 종료"
+            endUsing.onclick = (() => {
+                const isConfirmed = confirm(`${seat.seat_id}번 좌석 사용을 끝내시겠습니까?`);
+
+                // Check the user's choice
+                if (isConfirmed) {
+
+                    (async () => {
+                        const response = await fetch('../api/library/logout',
+                            {
+                                method: 'POST',
+                                headers: {
+                                    "Content-Type": "application/json",
+                                }
+                            });
+                        const data = await response.json();
+                        console.log(data)
+                        switch (response.status) {
+                            case 200:
+                                alert(`사용 종료됨!`);
+                                break;
+                            default:
+                                alert("예상하지 못한 에러 발생.")
+                                break;
+                        }
+
+                        location.reload()
+                    })();
+                } else {
+                    // User clicked "Cancel" in the confirmation dialog
+                    // alert("Operation canceled");
+                }
+            });
+            row.appendChild(endUsing)
+
+            tableBody.appendChild(row);
+        });
+    }
+
+    request();
+
+    function getUserId() {
+        const textField = document.getElementById("userid");
+        (async () => {
+            const response = await fetch('../api/library/login',
+                {
+                    method: 'POST',
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(formData)
+                });
+            const data = await response.json();
+            console.log(data)
+        })()
+    }
+</script>
+</body>
+</html>

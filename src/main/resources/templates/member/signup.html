@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SignUp</title>
+    <script>
+        function main() {
+            document.getElementById("signup-form").addEventListener("submit", function (event) {
+                event.preventDefault();  // 기본 폼 제출 동작을 막음
+
+                // FormData를 사용하여 폼 데이터 수집
+                const formData = {
+                    id: document.getElementById("id").value,
+                    pw: document.getElementById("pw").value
+                };
+
+                // Fetch API를 사용하여 POST 요청을 보냄
+                fetch("../api/member/signup", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(formData)
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            // 200 OK 응답의 경우
+                            alert("회원가입 성공!")
+
+                            window.location.href = "./login";  // 성공 페이지로 리디렉션
+                        } else {
+                            // 다른 응답 코드의 경우
+                            alert("회원가입 실패")
+                            // window.location.href = "/error";  // 에러 페이지로 리디렉션
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error during fetch:", error);
+                        // 에러가 발생한 경우
+                        // window.location.href = "/error";  // 에러 페이지로 리디렉션
+                    });
+            });
+        }
+
+    </script>
+</head>
+<body onload="main()">
+<h2>회원가입</h2>
+<hr>
+
+<form id="signup-form" method="post">
+    <div class="signup-form">
+        <label for="id">ID: </label>
+        <input id="id" name="id" required type="text"/>
+    </div>
+    <div class="signup-form">
+        <label for="pw">PW: </label>
+        <input id="pw" name="pw" required type="password"/>
+    </div>
+    <div class="signup-form">
+        <input type="submit" value="SignUp"/>
+    </div>
+</form>
+<a href="./login">
+    <button>로그인</button>
+</a>
+
+</body>
+</html>

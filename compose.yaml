@@ -1,13 +1,17 @@
 services:
   mysql:
-    image: 'mysql:latest'
+    image: 'mysql:8.0'
+    command: '--lower_case_table_names=1'
     environment:
-      - 'MYSQL_DATABASE=mydatabase'
+      - 'MYSQL_DATABASE=iotcomm'
       - 'MYSQL_PASSWORD=secret'
       - 'MYSQL_ROOT_PASSWORD=verysecret'
       - 'MYSQL_USER=myuser'
+      - 'MYSQL_LOG_BIN_TRUST_FUNCTION_CREATORS=1'
     ports:
-      - '3306'
+      - '13306:3306'
+    volumes:
+      - 'C:\Users\whddl\IdeaProjects\LibraEnd\src\main\resources\sql:/docker-entrypoint-initdb.d'
 #  mqtt:
 #    image: eclipse-mosquitto:2.0.15
 #    ports:
