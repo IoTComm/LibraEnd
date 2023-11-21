@@ -81,6 +81,7 @@ class WSHandler : TextWebSocketHandler() {
                 cancel()
                 purge()
             }
+            seatTimerMap.remove(seatState.seatId)
         }
     }
 

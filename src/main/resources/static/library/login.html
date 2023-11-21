@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <h2>열람실 로그인</h2><hr>
+
+    <form action="http://localhost:8080/iot-comm/api/member/login" method="post" class="login-form">
+        <div class="login-form">
+            <label for="id">ID: </label>
+            <input type="text" name="id" id="id" required />
+        </div>
+        <div class="login-form">
+            <label for="pw">PW: </label>
+            <input type="password" name="pw" id="pw" required />
+        </div>
+        <div class="login-form">
+            <input type="submit" value="Login" />
+        </div>
+    </form>
+</body>
+</html>
