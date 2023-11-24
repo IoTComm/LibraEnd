@@ -1,6 +1,7 @@
 ## HTTP API DOCS
 
-> `BASE_PATH` : [/iot-comm/api](http://localhost:8080/iot-comm/api)
+> `HOMEPAGE_PATH` : [iot.kuro9.dev/iot-comm](http://iot.kuro9.dev/iot-comm)
+> `BASE_PATH` : [iot.kuro9.dev/iot-comm/api](http://iot.kuro9.dev/iot-comm/api)
 
 - [/member](#member)
     - `POST` [`/signup`](#post-membersignup)
