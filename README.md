@@ -1,6 +1,6 @@
 ## HTTP API DOCS
 
-> `HOMEPAGE_PATH` : [iot.kuro9.dev/iot-comm](http://iot.kuro9.dev/iot-comm)
+> `HOMEPAGE_PATH` : [iot.kuro9.dev/iot-comm](http://iot.kuro9.dev/iot-comm)    
 > `BASE_PATH` : [iot.kuro9.dev/iot-comm/api](http://iot.kuro9.dev/iot-comm/api)
 
 - [/member](#member)
