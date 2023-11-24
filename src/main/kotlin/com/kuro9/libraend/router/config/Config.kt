@@ -8,7 +8,7 @@ const val COOKIE_SESS_KEY = "sess_id"
 
 fun getCookie(sessId: String): Cookie =
     Cookie(COOKIE_SESS_KEY, sessId).apply {
-        domain = "localhost" //TODO 나중에 변경 필요
+        domain = "iot.kuro9.dev" //TODO 나중에 변경 필요
         path = "/"
         maxAge = 6 * 60 * 60 // 6시간
         // secure = true

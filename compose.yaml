@@ -1,6 +1,7 @@
 services:
   mysql:
     image: 'mysql:8.0'
+    container_name: mysql
     command: '--lower_case_table_names=1'
     environment:
       - 'MYSQL_DATABASE=iotcomm'
@@ -9,16 +10,33 @@ services:
       - 'MYSQL_USER=myuser'
       - 'MYSQL_LOG_BIN_TRUST_FUNCTION_CREATORS=1'
     ports:
-      - '13306:3306'
+      - '3306:3306'
     volumes:
-      - 'C:\Users\whddl\IdeaProjects\LibraEnd\src\main\resources\sql:/docker-entrypoint-initdb.d'
-#  mqtt:
-#    image: eclipse-mosquitto:2.0.15
-#    ports:
-#      - "1883:1883"
-#      - "9001:9001"
-#    volumes:
-#      - ./src/main/resources/mqtt/config/mqtt.conf:/mosquitto/config/mosquitto.conf
-#      - ./src/main/resources/mqtt/config/passwd:/mosquitto/config/passwd
-##      - /workspaces/docker-workspaces/mqtt/data:/mosquitto/data
-##      - /workspaces/docker-workspaces/mqtt/log:/mosquitto/log
+      - 'C:/Users/whddl/IdeaProjects/LibraEnd/src/main/resources/sql:/docker-entrypoint-initdb.d'
+    networks:
+      - default
+      - our_net
+  application:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - 'mysql'
+    links:
+      - mysql
+    ports:
+      - '8080:8080'
+    container_name: LibraEnd
+
+    #    environment:
+    #      SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/userdb
+    #      SPRING_DATASOURCE_USERNAME: user
+    #      SPRING_DATASOURCE_PASSWORD: userpwd
+    restart: always
+    networks:
+      - default
+      - our_net
+
+networks:
+  our_net:
+    driver: bridge
