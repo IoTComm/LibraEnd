@@ -25,7 +25,7 @@
 
 | Name | Located in       | Description | Required | Schema |
 |------|------------------|-------------|----------|--------|
-| id   | application/json | ID          | Yes      | string |
+| id   | application/json | ID          | Yes      | int    |
 | pw   | application/json | Password    | Yes      | string |
 
 > Example
@@ -70,7 +70,7 @@
 
 | Name | Located in       | Description | Required | Schema |
 |------|------------------|-------------|----------|--------|
-| id   | application/json | ID          | Yes      | string |
+| id   | application/json | ID          | Yes      | int    |
 | pw   | application/json | Password    | Yes      | string |
 
 > Example
