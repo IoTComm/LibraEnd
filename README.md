@@ -6,6 +6,8 @@
 - [/member](#member)
     - `POST` [`/signup`](#post-membersignup)
     - `POST` [`/login`](#post-memberlogin)
+    - `GET` [`/my-id`](#get-membermy-id)
+    - `GET` [`/my-seat`](#get-membermy-seat)
 - [/library](#library)
     - `GET` `POST` [`/seat-list`](#get-post-libraryseat-list)
     - `POST` [`/logout`](#post-librarylogout)
@@ -106,6 +108,112 @@
 |------|-------------------|
 | 200  | Login success     |
 | 401  | ID/PW not correct |
+
+#### `GET` /member/my-id
+
+<hr>
+
+> 내 아이디 가져오기
+
+##### Parameters
+
+| Name    | Located in | Description | Required | Schema |
+|---------|------------|-------------|----------|--------|
+| sess_id | cookie     | Access Key  | Yes      | string |
+
+##### Responses
+
+###### Type
+
+| Name        | Schema           |
+|-------------|------------------|
+| code        | int              |
+| description | string           |
+| data        | UserIdReturnForm |
+
+###### UserIdReturnForm Type
+
+| Name    | Schema |
+|---------|--------|
+| user_id | int    |
+
+> Example
+> ```json
+> {
+>   "code": 200,
+>   "description": "OK",
+>   "data": {
+>     "user_id": 2171012
+>   } 
+> }
+> ```
+>
+
+###### Response Code
+
+| Code | Description         |
+|------|---------------------|
+| 200  | 성공                  |
+| 400  | 유저의 sessId가 유효하지 않음 |
+| 401  | sessId 없음           |
+
+#### `GET` /member/my-seat
+
+<hr>
+
+> 내 좌석번호 가져오기
+
+##### Parameters
+
+| Name    | Located in | Description | Required | Schema |
+|---------|------------|-------------|----------|--------|
+| sess_id | cookie     | Access Key  | Yes      | string |
+
+##### Responses
+
+###### Type
+
+| Name        | Schema           |
+|-------------|------------------|
+| code        | int              |
+| description | string           |
+| data        | SeatIdReturnForm |
+
+###### SeatIdReturnForm Type
+
+| Name    | Schema |
+|---------|--------|
+| seat_id | int    |
+
+> Example
+> ```json
+> {
+>   "code": 200,
+>   "description": "OK",
+>   "data": {
+>     "seat_id": 2
+>   } 
+> }
+> ```
+> 유저의 좌석 정보 없음
+> ```json
+> {
+>   "code": 200,
+>   "description": "OK",
+>   "data": {
+>     "seat_id": null
+>   }
+> }
+> ```
+>
+
+###### Response Code
+
+| Code | Description         |
+|------|---------------------|
+| 200  | 성공                  |
+| 400  | 유저의 sessId가 유효하지 않음 |
+| 401  | sessId 없음           |
 
 ### `/library`
 
