@@ -14,4 +14,7 @@ class RootRoute {
 
     @GetMapping("library/seat-list")
     fun seatList() = "library/seat-list"
+
+    @GetMapping("library/login")
+    fun libraryLogin() = "library/start-use"
 }

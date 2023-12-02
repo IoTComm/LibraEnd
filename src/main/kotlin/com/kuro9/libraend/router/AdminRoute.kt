@@ -52,7 +52,7 @@ class AdminRoute {
         ]
     )
     fun sudoLogout(
-        @CookieValue(COOKIE_SESS_KEY) sessId: String,
+        @CookieValue(COOKIE_SESS_KEY) sessId: String?,
         @RequestBody body: SudoLogoutInputForm,
         response: HttpServletResponse
     ): BasicReturnForm<LastUsedReturnForm> =

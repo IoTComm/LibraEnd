@@ -9,6 +9,7 @@
 <body>
 <h1>Seat List</h1>
 <h3 id="userid"></h3>
+<p id="using-seat"></p>
 
 <table border="1">
     <thead>
@@ -26,6 +27,33 @@
 
 <script>
     async function request() {
+        let myId = null
+        let mySeat = null
+        const getIdResponse = await fetch('../api/member/my-id',
+            {
+                method: 'GET',
+            });
+        const idData = await getIdResponse.json();
+
+        if (getIdResponse.status === 200) {
+            myId = idData.data.user_id
+            document.getElementById("userid").innerText = `안녕하세요, ${myId}님.`
+            const getSeatResponse = await fetch('../api/member/my-seat',
+                {
+                    method: 'GET',
+                });
+            const seatData = await getSeatResponse.json();
+
+            if (getSeatResponse.status === 200) {
+                mySeat = seatData.data.seat_id
+                console.log(mySeat)
+                console.log(typeof mySeat)
+            }
+        }
+        if (mySeat != null)
+            document.getElementById("using-seat").innerText = `현재 ${mySeat}번 좌석을 사용 중 입니다. `
+
+
         const response = await fetch('../api/library/seat-list',
             {
                 method: 'GET',
@@ -52,7 +80,8 @@
 
             const startUsing = document.createElement("button");
             startUsing.textContent = "사용 시작"
-            startUsing.disabled = seat.is_using
+            startUsing.disabled = mySeat !== null ? true : seat.is_using
+
             startUsing.onclick = (() => {
                 const isConfirmed = confirm(`${seat.seat_id}번 좌석을 사용하시겠습니까?`);
 
@@ -107,6 +136,7 @@
 
             const endUsing = document.createElement("button");
             endUsing.textContent = "사용 종료"
+            endUsing.disabled = mySeat !== seat.seat_id
             endUsing.onclick = (() => {
                 const isConfirmed = confirm(`${seat.seat_id}번 좌석 사용을 끝내시겠습니까?`);
 

@@ -1,9 +1,6 @@
 package com.kuro9.libraend.db
 
-import com.kuro9.libraend.db.type.BasicReturnForm
-import com.kuro9.libraend.db.type.LastUsedReturnForm
-import com.kuro9.libraend.db.type.SeatTable
-import com.kuro9.libraend.db.type.SessIdReturnForm
+import com.kuro9.libraend.db.type.*
 import com.zaxxer.hikari.HikariDataSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -26,6 +23,8 @@ class DBHandler {
     private final val LIBRARY_SEAT_LIST_QUERY = "CALL library_seat_list(?, ?, ?)"
     private final val IS_ADMIN_QUERY = "CALL is_admin(?, ?)"
     private final val SUDO_LIBRARY_CLEAR_SEAT_QUERY = "CALL sudo_library_clear_seat(?, ?, ?, ?)"
+    private final val GET_USER_ID = "{ ? = CALL get_user_id(?) }"
+    private final val GET_SEAT_ID = "{ ? = CALL get_user_seat(?) }"
 
     @Throws(SQLException::class, SQLTimeoutException::class)
     fun registerUser(id: Int, pw: String): BasicReturnForm<Nothing> {
@@ -86,7 +85,7 @@ class DBHandler {
     }
 
     @Throws(SQLException::class, SQLTimeoutException::class)
-    fun libraryReservation(seatId: Int, startTime: Timestamp, sessId: String): BasicReturnForm<Nothing> =
+    fun libraryReservation(seatId: Int, startTime: Timestamp, sessId: String?): BasicReturnForm<Nothing> =
         LIBRARY_RESERVATION_QUERY.query {
             with(it) {
                 setInt(1, seatId)
@@ -114,7 +113,7 @@ class DBHandler {
         }
 
     @Throws(SQLException::class, SQLTimeoutException::class)
-    fun libraryLogout(sessId: String): BasicReturnForm<Nothing> = LIBRARY_LOGOUT_QUERY.query {
+    fun libraryLogout(sessId: String?): BasicReturnForm<Nothing> = LIBRARY_LOGOUT_QUERY.query {
         with(it) {
             setString(1, sessId)
             registerOutParameter(2, INTEGER)
@@ -181,7 +180,7 @@ class DBHandler {
     }
 
     @Throws(SQLException::class, SQLTimeoutException::class)
-    fun sudoLibrarySeatClear(sessId: String, seatId: Int): BasicReturnForm<LastUsedReturnForm> {
+    fun sudoLibrarySeatClear(sessId: String?, seatId: Int): BasicReturnForm<LastUsedReturnForm> {
         return SUDO_LIBRARY_CLEAR_SEAT_QUERY.query {
             with(it) {
                 setString(1, sessId)
@@ -208,6 +207,63 @@ class DBHandler {
                         else -> null
                     }
                 )
+            }
+        }
+    }
+
+    @Throws(SQLException::class, SQLTimeoutException::class)
+    fun getUserId(sessId: String?): BasicReturnForm<UserIdReturnForm> {
+        if (sessId === null) return BasicReturnForm(401, "Not Logged In")
+
+        return GET_USER_ID.query {
+            with(it) {
+                setString(2, sessId)
+                registerOutParameter(1, INTEGER)
+
+                execute()
+
+                when (val userId = getInt(1)) {
+                    0 -> BasicReturnForm(400, "Not valid sessId")
+                    else -> BasicReturnForm(200, "OK", UserIdReturnForm(userId))
+                }
+            }
+        }
+    }
+
+    @Throws(SQLException::class, SQLTimeoutException::class)
+    fun getSeatId(userId: Int): BasicReturnForm<SeatIdReturnForm> {
+        return GET_SEAT_ID.query {
+            with(it) {
+                setInt(2, userId)
+                registerOutParameter(1, INTEGER)
+
+                execute()
+                var seatId: Int? = getInt(1)
+                if (seatId == 0) seatId = null
+
+                BasicReturnForm(200, "OK", SeatIdReturnForm(seatId))
+            }
+        }
+    }
+
+    @Throws(SQLException::class, SQLTimeoutException::class)
+    fun getSeatId(sessId: String?): BasicReturnForm<SeatIdReturnForm> {
+        val userIdResult = getUserId(sessId)
+        if (userIdResult.code != 200) {
+            return BasicReturnForm(userIdResult.code, userIdResult.description)
+        }
+
+        return GET_SEAT_ID.query {
+            with(it) {
+                setInt(2, userIdResult.data!!.userId)
+                registerOutParameter(1, INTEGER)
+
+                execute()
+
+                var seatId: Int? = getInt(1)
+                if (seatId == 0) seatId = null
+
+                BasicReturnForm(200, "OK", SeatIdReturnForm(seatId))
             }
         }
     }

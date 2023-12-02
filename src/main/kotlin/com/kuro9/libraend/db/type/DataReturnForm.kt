@@ -14,3 +14,9 @@ data class LastUsedReturnForm(
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class SessIdReturnForm(val sessId: String)
+
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
+data class UserIdReturnForm(val userId: Int)
+
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
+data class SeatIdReturnForm(val seatId: Int?)

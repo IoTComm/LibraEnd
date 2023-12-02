@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>좌석 사용</title>
+    <script>
+        const urlParams = (new URL(window.location.href)).searchParams
+        const selectedSeat = urlParams.get("seat")
+        if (selectedSeat !== null) {
+            document.getElementById("seat-id").innerText = selectedSeat
+        }
+
+        function main() {
+            document.getElementById("login-form").addEventListener("submit", function (event) {
+                event.preventDefault();  // 기본 폼 제출 동작을 막음
+
+
+                (async () => {
+                    const formData = {
+                        seat_id: parseInt(document.getElementById("seat-id").value)
+                    }
+                    console.table(formData)
+                    const response = await fetch("../api/library/login", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    const data = await response.json();
+                    console.log(data)
+                    switch (response.status) {
+                        case 200:
+                            alert("사용 시작합니다.")
+                            window.location.href = "../library/seat-list"
+                            break
+                        case 401:
+                            alert("로그인 정보 없음! 로그인 페이지로 이동합니다.")
+                            window.location.href = `../member/login?callback=reservation&seat=${formData["seat-id"]}`
+                            break
+                        case 403:
+                            alert("이미 다른 좌석을 사용중입니다!")
+                            break
+                        case 404:
+                            alert("유효한 좌석 번호가 아닙니다. 다른 좌석을 입력해주세요.")
+                            break
+                        case 409:
+                            alert("이미 사용중인 좌석입니다. 다른 좌석을 입력해주세요.")
+                            break
+                        default:
+                            alert("알 수 없는 에러 발생!")
+                            break
+                    }
+                })()
+
+            })
+        }
+    </script>
+</head>
+<body onload="main()">
+<h2>좌석 사용 시작</h2>
+<hr>
+
+<form id="login-form" method="post">
+    <div class="login-form">
+        <label for="seat-id">ID: </label>
+        <input id="seat-id" name="seat-id" required type="number"/>
+    </div>
+    <div class="login-form">
+        <input type="submit" value="사용시작"/>
+    </div>
+</form>
+<a href="./seat-list">
+    <button>좌석 현황</button>
+</a>
+</body>
+</html>

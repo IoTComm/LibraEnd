@@ -2,7 +2,10 @@ package com.kuro9.libraend.router
 
 import com.kuro9.libraend.db.DBHandler
 import com.kuro9.libraend.db.type.BasicReturnForm
+import com.kuro9.libraend.db.type.SeatIdReturnForm
+import com.kuro9.libraend.db.type.UserIdReturnForm
 import com.kuro9.libraend.router.config.API_PATH
+import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
 import com.kuro9.libraend.router.config.getCookie
 import com.kuro9.libraend.router.errorhandle.withError
 import com.kuro9.libraend.router.type.LoginInputForm
@@ -14,10 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping(API_PATH + "member/")
@@ -74,4 +74,61 @@ class MemberRoute {
                     response.addCookie(getCookie(it.data!!.sessId))
                 it.data = null
             }.getBasicForm()
+
+    @GetMapping("my-id")
+    @Operation(description = "내 아이디 가져오기")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Accepted",
+                content = [Content(schema = Schema(implementation = BasicReturnForm::class))]
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Not logged in",
+                content = [Content(schema = Schema(implementation = BasicReturnForm::class))]
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Not valid sessId",
+                content = [Content(schema = Schema(implementation = BasicReturnForm::class))]
+            ),
+        ]
+    )
+    fun getMyId(
+        @CookieValue(COOKIE_SESS_KEY) sessId: String?,
+        response: HttpServletResponse
+    ): BasicReturnForm<UserIdReturnForm> = runCatching { db.getUserId(sessId) }
+        .getOrElse { withError(it) }
+        .also { response.status = it.code }
+
+    @GetMapping("my-seat")
+    @Operation(description = "내 좌석 가져오기")
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Accepted",
+                content = [Content(schema = Schema(implementation = BasicReturnForm::class))]
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "Not logged in",
+                content = [Content(schema = Schema(implementation = BasicReturnForm::class))]
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Not valid sessId",
+                content = [Content(schema = Schema(implementation = BasicReturnForm::class))]
+            )
+        ]
+    )
+    fun getMySeat(
+        @CookieValue(COOKIE_SESS_KEY) sessId: String?,
+        response: HttpServletResponse
+    ): BasicReturnForm<SeatIdReturnForm> = runCatching { db.getSeatId(sessId) }
+        .getOrElse { withError(it) }
+        .also { response.status = it.code }
+
 }

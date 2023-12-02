@@ -63,7 +63,7 @@ class LibraryRoute {
         ]
     )
     fun libraryLogin(
-        @CookieValue(COOKIE_SESS_KEY) sessId: String,
+        @CookieValue(COOKIE_SESS_KEY) sessId: String?,
         @RequestBody body: ReservationInputForm,
         response: HttpServletResponse
     ): BasicReturnForm<Nothing> = runCatching { db.libraryReservation(body.seatId, body.startTime, sessId) }
@@ -83,7 +83,7 @@ class LibraryRoute {
         ]
     )
     fun libraryLogout(
-        @CookieValue(COOKIE_SESS_KEY) sessId: String,
+        @CookieValue(COOKIE_SESS_KEY) sessId: String?,
         response: HttpServletResponse
     ): BasicReturnForm<Nothing> =
         kotlin.runCatching { db.libraryLogout(sessId) }

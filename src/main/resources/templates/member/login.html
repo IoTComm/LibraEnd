@@ -23,12 +23,21 @@
                     body: JSON.stringify(formData)
                 })
                     .then(response => {
-                        alert(response.statusText)
                         if (response.ok) {
                             // 200 OK 응답의 경우
                             alert("로그인 성공")
 
-                            window.location.href = "../library/seat-list";  // 성공 페이지로 리디렉션
+                            const urlParams = (new URL(window.location.href)).searchParams
+                            const callback = urlParams.get("callback")
+                            const seat = urlParams.get("seat")
+
+                            if ("reservation" === callback) {
+                                window.location.href = `../library/login?seat=${seat}`
+                            } else {
+                                window.location.href = "../library/seat-list";
+                            }
+
+
                         } else {
                             // 다른 응답 코드의 경우
                             alert("로그인 실패")
