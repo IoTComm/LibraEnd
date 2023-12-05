@@ -136,7 +136,7 @@ class DBHandler {
     fun getSeatList(
         seatId: Int? = null,
         isUsing: Boolean? = null,
-        deskId: Int? = null
+        deskId: Int? = null,
     ): BasicReturnForm<List<SeatTable>> {
         val resultList = mutableListOf<SeatTable>()
 
@@ -266,6 +266,44 @@ class DBHandler {
                 BasicReturnForm(200, "OK", SeatIdReturnForm(seatId))
             }
         }
+    }
+
+    @Throws(SQLException::class, SQLTimeoutException::class, IllegalStateException::class)
+    fun updateDeskStatus(seatId: Int): DeskTable {
+        val desk: DeskTable
+        dataSource.connection.use {
+            it.createStatement().use {
+                val deskResult = it.executeQuery("SELECT desk_id FROM seat WHERE id = $seatId")
+                if (!deskResult.next()) throw IllegalStateException("invalid seat id!")
+                val deskId = deskResult.getInt(1)
+                if (deskId == 0) throw IllegalStateException("seat has desk of null!")
+                deskResult.close()
+
+                val seatResult = it.executeQuery("SELECT * FROM seat WHERE desk_id = $deskId and is_using = 0")
+                val isDeskUsing = seatResult.next()
+                // 현재 책상에서 사용중인 좌석이 없다면 false else true
+                it.executeUpdate("UPDATE desk SET state = $isDeskUsing WHERE id = $deskId")
+                seatResult.close()
+
+                desk = DeskTable(deskId, isDeskUsing)
+            }
+        }
+        return desk
+    }
+
+    @Throws(SQLException::class, SQLTimeoutException::class)
+    fun getDeskStatus(): List<DeskTable> {
+        val deskStatus = mutableListOf<DeskTable>()
+        dataSource.connection.use {
+            it.createStatement().use {
+                it.executeQuery("SELECT * FROM desk").use {
+                    while (it.next()) deskStatus.add(
+                        DeskTable(it.getInt(1), it.getBoolean(2))
+                    )
+                }
+            }
+        }
+        return deskStatus
     }
 
     private fun checkPWString(pw: String): Boolean = Regex("^[a-zA-Z0-9!@#\$%^&*()_+-=]{1,15}$").matches(pw)

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.kuro9.libraend.db.DBHandler
 import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
+import com.kuro9.libraend.ws.observer.DeskStateBroadcaster
+import com.kuro9.libraend.ws.observer.SeatStateBroadcaster
 import com.kuro9.libraend.ws.type.SeatError
 import com.kuro9.libraend.ws.type.SeatState
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,12 +18,25 @@ import java.util.*
 
 
 @Component
-class WSHandler : TextWebSocketHandler() {
+class WSHandler(
+    seatBroadcaster: SeatStateBroadcaster,
+    deskBroadcaster: DeskStateBroadcaster,
+) : TextWebSocketHandler() {
     private val masterNodes: MutableList<WebSocketSession> = mutableListOf()
-    private val seatTimerMap: HashMap<Int, Timer> = HashMap()
+
+    @Autowired
+    lateinit var seatTimerMap: HashMap<Int, Timer>
+
+    @Autowired
+    lateinit var timerFactory: SeatInactiveTimerFactory
 
     @Autowired
     lateinit var db: DBHandler
+
+    init {
+        seatBroadcaster.attach { broadcastToClient(it) }
+        deskBroadcaster.attach { broadcastToClient(it) }
+    }
 
     @Throws(Exception::class)
     override fun afterConnectionEstablished(session: WebSocketSession) {
@@ -56,27 +71,18 @@ class WSHandler : TextWebSocketHandler() {
         val seatState = jacksonObjectMapper().readValue<SeatState>(parsedMsg)
 
         if (!seatState.isActive) {
-            val timer = Timer()
-            val timerTask = object : TimerTask() {
-                override fun run() {
-                    // TODO timeout
-                    // 의자, 책상 state update
-                    // admin call
-                    broadcastToClient(
-                        jacksonObjectMapper().writeValueAsString(
-                            SeatError(
-                                seatState.seatId,
-                                "Seat Timeout without Logging Out!"
-                            )
-                        )
+            if (seatState.seatId in seatTimerMap) return
+
+            val timer = timerFactory.getSeatTimer(seatState.seatId) {
+                broadcastToClient(
+                    SeatError(
+                        seatState.seatId,
+                        "Seat Timeout without Logging Out!"
                     )
-                    // 사용한 학생에게 알림
-                }
+                )
             }
-            timer.schedule(timerTask, 30 * 60 * 1000L)
             seatTimerMap[seatState.seatId] = timer
-        }
-        else {
+        } else {
             seatTimerMap[seatState.seatId]?.apply {
                 cancel()
                 purge()
@@ -93,9 +99,11 @@ class WSHandler : TextWebSocketHandler() {
         return session.sendMessage(TextMessage(payload))
     }
 
-    fun broadcastToClient(payload: String) {
+    fun broadcastToClient(payload: Any) {
+        val jsonString = jacksonObjectMapper().writeValueAsString(payload)
         masterNodes.forEach {
-            sendToClient(it, payload)
+            sendToClient(it, jsonString)
         }
     }
+
 }

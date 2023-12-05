@@ -7,6 +7,8 @@ import com.kuro9.libraend.router.config.API_PATH
 import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
 import com.kuro9.libraend.router.errorhandle.withError
 import com.kuro9.libraend.router.type.SudoLogoutInputForm
+import com.kuro9.libraend.ws.observer.SeatStateBroadcaster
+import com.kuro9.libraend.ws.type.SeatState
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -24,6 +26,9 @@ class AdminRoute {
 
     @Autowired
     lateinit var db: DBHandler
+
+    @Autowired
+    lateinit var seatBroadcaster: SeatStateBroadcaster
 
     @PostMapping("sudo-logout")
     @Operation(description = "강제 로그아웃")
@@ -54,9 +59,12 @@ class AdminRoute {
     fun sudoLogout(
         @CookieValue(COOKIE_SESS_KEY) sessId: String?,
         @RequestBody body: SudoLogoutInputForm,
-        response: HttpServletResponse
+        response: HttpServletResponse,
     ): BasicReturnForm<LastUsedReturnForm> =
         runCatching { db.sudoLibrarySeatClear(sessId, body.seatId) }
             .getOrElse { withError(it) }
-            .also { response.status = it.code }
+            .also {
+                response.status = it.code
+                seatBroadcaster.updateState(SeatState(body.seatId, false))
+            }
 }

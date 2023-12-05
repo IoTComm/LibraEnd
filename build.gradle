@@ -52,8 +52,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     // Docs Generator
-//    implementation 'org.springdoc:springdoc-openapi-ui:1.6.8'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
+
+    // Coroutine
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.21"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
 }
 
 tasks.withType(KotlinCompile) {

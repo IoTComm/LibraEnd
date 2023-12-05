@@ -8,6 +8,9 @@ import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
 import com.kuro9.libraend.router.errorhandle.withError
 import com.kuro9.libraend.router.type.ReservationInputForm
 import com.kuro9.libraend.router.type.SeatListInputForm
+import com.kuro9.libraend.ws.WSHandler
+import com.kuro9.libraend.ws.observer.SeatStateBroadcaster
+import com.kuro9.libraend.ws.type.SeatState
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
@@ -25,6 +28,12 @@ class LibraryRoute {
 
     @Autowired
     lateinit var db: DBHandler
+
+    @Autowired
+    lateinit var ws: WSHandler
+
+    @Autowired
+    lateinit var seatBroadcaster: SeatStateBroadcaster
 
     @PostMapping("login")
     @Operation(description = "자리에 앉고 사용시작 요청")
@@ -65,10 +74,16 @@ class LibraryRoute {
     fun libraryLogin(
         @CookieValue(COOKIE_SESS_KEY) sessId: String?,
         @RequestBody body: ReservationInputForm,
-        response: HttpServletResponse
+        response: HttpServletResponse,
     ): BasicReturnForm<Nothing> = runCatching { db.libraryReservation(body.seatId, body.startTime, sessId) }
         .getOrElse { withError(it) }
-        .also { response.status = it.code }
+        .also {
+            response.status = it.code
+
+            if (it.code == 200)
+                seatBroadcaster.updateState(SeatState(body.seatId, true))
+
+        }
 
 
     @PostMapping("logout")
@@ -84,11 +99,17 @@ class LibraryRoute {
     )
     fun libraryLogout(
         @CookieValue(COOKIE_SESS_KEY) sessId: String?,
-        response: HttpServletResponse
-    ): BasicReturnForm<Nothing> =
-        kotlin.runCatching { db.libraryLogout(sessId) }
+        response: HttpServletResponse,
+    ): BasicReturnForm<Nothing> {
+        val seatId: Int? = runCatching { db.getSeatId(sessId) }.getOrElse { withError(it) }.data?.seatId
+        return kotlin.runCatching { db.libraryLogout(sessId) }
             .getOrElse { withError(it) }
-            .also { response.status = it.code }
+            .also {
+                response.status = it.code
+                if (it.code == 200 && seatId != null)
+                    seatBroadcaster.updateState(SeatState(seatId, false))
+            }
+    }
 
 
     @PostMapping("seat-list")
@@ -104,7 +125,7 @@ class LibraryRoute {
     )
     fun getSeatList(
         @RequestBody body: SeatListInputForm?,
-        response: HttpServletResponse
+        response: HttpServletResponse,
     ): BasicReturnForm<List<SeatTable>> =
         runCatching { db.getSeatList(body?.seatId, body?.isUsing, body?.deskId) }
             .getOrElse { withError(it, listOf()) }
@@ -122,7 +143,7 @@ class LibraryRoute {
         ]
     )
     fun getSeatList(
-        response: HttpServletResponse
+        response: HttpServletResponse,
     ): BasicReturnForm<List<SeatTable>> = getSeatList(null, response)
 
 }
