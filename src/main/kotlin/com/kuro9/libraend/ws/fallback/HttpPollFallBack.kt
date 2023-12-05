@@ -3,7 +3,10 @@ package com.kuro9.libraend.ws.fallback
 import com.kuro9.libraend.db.DBHandler
 import com.kuro9.libraend.db.type.DeskTable
 import com.kuro9.libraend.router.config.ROOT_PATH
+import com.kuro9.libraend.sse.SseController
+import com.kuro9.libraend.sse.type.Notify
 import com.kuro9.libraend.ws.SeatInactiveTimerFactory
+import com.kuro9.libraend.ws.WSHandler
 import com.kuro9.libraend.ws.observer.DeskStateBroadcaster
 import com.kuro9.libraend.ws.observer.SeatStateBroadcaster
 import com.kuro9.libraend.ws.type.SeatError
@@ -24,7 +27,8 @@ import java.util.*
 class HttpPollFallBack(
     seatBroadcaster: SeatStateBroadcaster,
     deskBroadcaster: DeskStateBroadcaster,
-) {
+
+    ) {
 
     init {
         seatBroadcaster.attach { stateChangedSeat[it.seatId] = it }
@@ -42,6 +46,12 @@ class HttpPollFallBack(
 
     @Autowired
     lateinit var seatTimerMap: HashMap<Int, Timer>
+
+    @Autowired
+    lateinit var notifyHandler: SseController
+
+    @Autowired
+    lateinit var ws: WSHandler
 
     private val timeOutSeats: TreeSet<Int> = TreeSet()
     private val stateChangedDesk: HashMap<Int, DeskTable> = HashMap()
@@ -71,7 +81,13 @@ class HttpPollFallBack(
                 // 처음 자리를 비운 상태 -> 타이머 시작
                 val timer = timerFactory.getSeatTimer(seat.seatId) {
                     timeOutSeats.add(seat.seatId)
-                    // TODO 휴대폰으로 알림?
+                    notifyHandler.notifyClientWithSeat(seat.seatId, Notify(1, "자리 비움으로 인해 퇴실처리 되었습니다. "))
+                    ws.broadcastToClient(
+                        SeatError(
+                            seat.seatId,
+                            "${seat.seatId}번 자리 비움 상태. 자리를 정리하고 강제퇴실 처리해 주십시오. "
+                        )
+                    )
                 }
                 seatTimerMap[seat.seatId] = timer
             }

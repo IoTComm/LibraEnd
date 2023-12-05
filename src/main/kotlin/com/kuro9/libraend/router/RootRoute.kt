@@ -17,4 +17,7 @@ class RootRoute {
 
     @GetMapping("library/login")
     fun libraryLogin() = "library/start-use"
+
+    @GetMapping("admin")
+    fun adminPage() = "admin/seat-manage"
 }

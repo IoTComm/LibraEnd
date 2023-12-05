@@ -31,10 +31,15 @@
                             const callback = urlParams.get("callback")
                             const seat = urlParams.get("seat")
 
-                            if ("reservation" === callback) {
-                                window.location.href = `../library/login?seat=${seat}`
-                            } else {
-                                window.location.href = "../library/seat-list";
+                            switch (callback) {
+                                case "reservation":
+                                    window.location.href = `../library/login?seat=${seat}`
+                                    break
+                                case "admin":
+                                    window.location.href = "../admin"
+                                    break
+                                default:
+                                    window.location.href = "../library/seat-list";
                             }
 
 

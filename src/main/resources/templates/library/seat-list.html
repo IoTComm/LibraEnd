@@ -4,9 +4,26 @@
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Seat List</title>
+    <style>
+        .notification-container {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column-reverse; /* 역순으로 쌓이도록 설정 */
+        }
 
+        .notification {
+            padding: 15px;
+            background-color: #333;
+            color: #fff;
+            margin-top: 10px; /* 각 알림 사이의 간격 설정 */
+            display: none;
+
+        }
+    </style>
 </head>
-<body>
+<body onload="init()">
 <h1>Seat List</h1>
 <h3 id="userid"></h3>
 <p id="using-seat"></p>
@@ -25,7 +42,66 @@
     </tbody>
 </table>
 
+<div id="notificationContainer"></div>
+
 <script>
+    const notificationContainer = document.getElementById('notificationContainer');
+    let zIndexCounter = 1;
+    let userSeat = null
+    const domain = window.location.hostname
+    const port = window.location.port
+    const portString = (port === "443" || port === "80") ? "" : `:${port}`
+
+    function init() {
+        initSse()
+        request()
+    }
+
+    function initSse() {
+        const sse = new EventSource('../noti/open-channel')
+        sse.onmessage = (event) => {
+            const messageData = JSON.parse(event.data)
+            console.table(messageData)
+            switch (messageData.type) {
+                case 0:
+                    const level = messageData.data.level
+                    console.log(messageData.data)
+                    switch (level) {
+                        case 0:
+                            showNotification(`Noti Connected; Server:${messageData.data.message}`)
+                            break
+                        case 1:
+                            const noti = messageData.data.message
+                            alert(noti)
+                            // location.reload()
+                            break
+                        default:
+                            break
+                    }
+                    break
+                case 1:
+                    console.log(messageData.data)
+                    const seatId = messageData.data.seat_id
+                    const isActive = messageData.data.is_active
+                    if (!isActive) {
+                        updateSeatData(seatId, false, false, true)
+                    } else {
+                        updateSeatData(seatId, true, true, userSeat !== seatId)
+                    }
+
+                    break
+                default:
+                    break
+            }
+        }
+
+        sse.onerror = (event) => {
+            showNotification("알림: SSE 연결이 끊어졌습니다.")
+            console.log(event)
+            sse.close()
+        }
+    }
+
     async function request() {
         let myId = null
         let mySeat = null
@@ -65,23 +141,27 @@
 
         data.data.forEach(seat => {
             const row = document.createElement("tr");
+            row.id = `no${seat.seat_id}`
 
             const seatIdCell = document.createElement("td");
+            seatIdCell.className = "seat_id"
             seatIdCell.textContent = seat.seat_id;
             row.appendChild(seatIdCell);
 
             const isUsingCell = document.createElement("td");
+            isUsingCell.className = "is_using"
             isUsingCell.textContent = seat.is_using ? "Yes" : "No";
             row.appendChild(isUsingCell);
 
             const deskIdCell = document.createElement("td");
+            deskIdCell.className = "desk_id"
             deskIdCell.textContent = seat.desk_id;
             row.appendChild(deskIdCell);
 
             const startUsing = document.createElement("button");
+            startUsing.className = "start"
             startUsing.textContent = "사용 시작"
             startUsing.disabled = mySeat !== null ? true : seat.is_using
-
             startUsing.onclick = (() => {
                 const isConfirmed = confirm(`${seat.seat_id}번 좌석을 사용하시겠습니까?`);
 
@@ -106,10 +186,12 @@
                         switch (response.status) {
                             case 200:
                                 alert(`${seat.seat_id}번 좌석 사용 시작됨!`);
+                                userSeat = seat.seat_id
                                 break;
                             case 401:
                                 alert("사용자 로그인 정보가 유효하지 않습니다.");
                                 window.location.href = "../member/login"
+                                return
                                 break;
                             case 403:
                                 alert("이미 다른 좌석을 사용하고 있습니다. ");
@@ -125,7 +207,7 @@
                                 break;
                         }
 
-                        location.reload()
+                        reloadTable()
                     })();
                 } else {
                     // User clicked "Cancel" in the confirmation dialog
@@ -135,6 +217,7 @@
             row.appendChild(startUsing)
 
             const endUsing = document.createElement("button");
+            endUsing.className = "end"
             endUsing.textContent = "사용 종료"
             endUsing.disabled = mySeat !== seat.seat_id
             endUsing.onclick = (() => {
@@ -162,7 +245,7 @@
                                 break;
                         }
 
-                        location.reload()
+                        reloadTable()
                     })();
                 } else {
                     // User clicked "Cancel" in the confirmation dialog
@@ -175,7 +258,6 @@
         });
     }
 
-    request();
 
     function getUserId() {
         const textField = document.getElementById("userid");
@@ -191,6 +273,49 @@
             const data = await response.json();
             console.log(data)
         })()
+    }
+
+    function showNotification(message) {
+        // 알림창 요소를 동적으로 생성
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.style.bottom = '10px';
+        notification.style.right = '10px';
+        notification.style.zIndex = `${zIndexCounter++}`;
+        notification.textContent = message;
+
+        // 알림창을 표시하고 5초 뒤에 사라지도록 설정
+        notificationContainer.appendChild(notification);
+        notification.style.display = 'block';
+        setTimeout(function () {
+            closeNotification(notification);
+        }, 5000);
+    }
+
+    function closeNotification(notification) {
+        // 알림창을 닫고 요소를 제거
+        notification.style.display = 'none';
+        notificationContainer.removeChild(notification);
+    }
+
+    function updateSeatData(seatId, isActive, startDisabled, endDisabled) {
+        try {
+            document.querySelector(`#no${seatId} .is_using`).textContent
+                = isActive ? "Yes" : "No";
+            document.querySelector(`#no${seatId} .start`).disabled
+                = startDisabled
+            document.querySelector(`#no${seatId} .end`).disabled
+                = endDisabled
+        } catch (_) {
+        }
+    }
+
+    function reloadTable() {
+        const seatTableBody = document.getElementById("seatTableBody");
+        while (seatTableBody.firstChild) {
+            seatTableBody.removeChild(seatTableBody.firstChild);
+        }
+        request()
     }
 </script>
 </body>

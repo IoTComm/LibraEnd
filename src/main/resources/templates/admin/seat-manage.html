@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Seat List</title>
+    <style>
+        .notification-container {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column-reverse; /* 역순으로 쌓이도록 설정 */
+        }
+
+        .notification {
+            padding: 15px;
+            background-color: #333;
+            color: #fff;
+            margin-top: 10px; /* 각 알림 사이의 간격 설정 */
+            display: none;
+
+        }
+    </style>
+</head>
+<body onload="initWS()">
+<h1>Seat Management Page</h1>
+<h3 id="userid"></h3>
+
+<table border="1">
+    <thead>
+    <tr>
+        <th>Seat ID</th>
+        <th>Is Using</th>
+        <th>Desk ID</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody id="seatTableBody">
+    <!-- Data will be dynamically added here -->
+    </tbody>
+</table>
+
+<div id="notificationContainer"></div>
+
+<script>
+    const notificationContainer = document.getElementById('notificationContainer');
+    let zIndexCounter = 1;
+    const domain = window.location.hostname
+    const port = window.location.port
+    const portString = (port === "443" || port === "80") ? "" : `:${port}`
+
+    function initWS() {
+        const socket = new WebSocket(`ws://${domain}${portString}/iot-comm/ws`)
+        socket.onopen = () => {
+            showNotification("계정 확인 중...")
+        }
+        socket.onmessage = async (message) => {
+            const wsMessage = await JSON.parse(message.data)
+            console.log(wsMessage)
+            switch (wsMessage.type) {
+                case 0: // 연결 정보
+                    switch (wsMessage.data) {
+                        case 200:
+                            showNotification("연결 성공!")
+                            await request()
+                            break
+                        case 401:
+                            alert("로그인 세션이 만료되었습니다. 다시 로그인 해 주세요.")
+                            window.location.href = "./member/login?callback=admin"
+                            break
+                        case 403:
+                            alert("페이지에 접근할 권한이 없습니다.")
+                            window.location.href = "./library/seat-list"
+                            break
+                        default:
+                            alert(`알 수 없는 응답 코드: ${wsMessage.data}`)
+                    }
+                    break
+                case 1: // SeatState 변경
+                    showNotification(`${wsMessage.data.seat_id}번 자리 사용 ${wsMessage.data.is_active ? "시작됨" : "종료됨"}`)
+                    document.querySelector(`#no${wsMessage.data.seat_id} .is_using`).textContent
+                        = wsMessage.data.is_active ? "Yes" : "No";
+
+                    document.querySelector(`#no${wsMessage.data.seat_id} .action_button`).disabled
+                        = !wsMessage.data.is_active
+                    break
+                case 2: // DeskState 변경
+                    break
+                case 3:
+                    const message = wsMessage.data.description
+                    alert(message)
+                    const target = document.getElementById(`no${wsMessage.data.seat_id}`)
+                    target.style.backgroundColor = 'lightcoral';
+                    break
+                default:
+                    break
+            }
+        }
+        socket.onclose = (message) => {
+            showNotification(`연결 종료: ${message.reason}`)
+        }
+    }
+
+
+    async function request() {
+        let myId = null
+
+        const getIdResponse = await fetch('./api/member/my-id',
+            {
+                method: 'GET',
+            });
+        const idData = await getIdResponse.json();
+
+        if (getIdResponse.status === 200) {
+            myId = idData.data.user_id
+            document.getElementById("userid").innerText = `안녕하세요, 관리자 ${myId}님.`
+        }
+
+
+        const response = await fetch('./api/library/seat-list',
+            {
+                method: 'GET',
+            });
+        const data = await response.json();
+        console.log(data)
+
+        const tableBody = document.getElementById("seatTableBody");
+
+        data.data.forEach(seat => {
+            const row = document.createElement("tr");
+            row.id = `no${seat.seat_id}`
+
+            const seatIdCell = document.createElement("td");
+            seatIdCell.className = "seat_id"
+            seatIdCell.textContent = seat.seat_id;
+            row.appendChild(seatIdCell);
+
+            const isUsingCell = document.createElement("td");
+            isUsingCell.className = "is_using"
+            isUsingCell.textContent = seat.is_using ? "Yes" : "No";
+            row.appendChild(isUsingCell);
+
+            const deskIdCell = document.createElement("td");
+            deskIdCell.className = "desk_id"
+            deskIdCell.textContent = seat.desk_id;
+            row.appendChild(deskIdCell);
+
+            const sudoLogoutCell = document.createElement("button");
+            sudoLogoutCell.className = "action_button"
+            sudoLogoutCell.textContent = "강제퇴실";
+            sudoLogoutCell.disabled = !seat.is_using
+            sudoLogoutCell.onclick = (async () => {
+                const buttonResponse = await fetch('./api/admin/sudo-logout',
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            "seat_id": seat.seat_id
+                        }),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    }
+                );
+                const buttonResponseData = await buttonResponse.json()
+
+                switch (buttonResponse.status) {
+                    case 200:
+                        alert(`학번 ${buttonResponseData.data.last_used_user_id} 강제퇴실 완료`)
+                        const target = document.getElementById(`no${buttonResponseData.data.seat_id}`)
+                        target.style.backgroundColor = '';
+                        break
+                    case 401:
+                        alert(`로그인 정보 없음!`)
+                        window.location.href = "./member/login?callback=admin"
+                        break
+                    case 403:
+                        alert(`권한 없음!`)
+                        window.location.href = "./library/seat-list"
+                        break
+                    case 404:
+                        alert("좌석 번호 에러! 데이터가 손상되었을 가능성이 있습니다.")
+                        location.reload()
+                        break
+                    default:
+                        alert(`핸들링되지 않은 에러: ${buttonResponse.status}`)
+                        break
+                }
+
+            })
+            row.appendChild(sudoLogoutCell)
+
+            tableBody.appendChild(row);
+        });
+    }
+
+    function getUserId() {
+        const textField = document.getElementById("userid");
+        (async () => {
+            const response = await fetch('../api/library/login',
+                {
+                    method: 'POST',
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(formData)
+                });
+            const data = await response.json();
+            console.log(data)
+        })()
+    }
+
+    function showNotification(message) {
+        // 알림창 요소를 동적으로 생성
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.style.bottom = '10px';
+        notification.style.right = '10px';
+        notification.style.zIndex = `${zIndexCounter++}`;
+        notification.textContent = message;
+
+        // 알림창을 표시하고 5초 뒤에 사라지도록 설정
+        notificationContainer.appendChild(notification);
+        notification.style.display = 'block';
+        setTimeout(function () {
+            closeNotification(notification);
+        }, 5000);
+    }
+
+    function closeNotification(notification) {
+        // 알림창을 닫고 요소를 제거
+        notification.style.display = 'none';
+        notificationContainer.removeChild(notification);
+    }
+</script>
+</body>
+</html>

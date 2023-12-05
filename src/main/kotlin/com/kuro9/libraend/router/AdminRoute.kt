@@ -7,6 +7,8 @@ import com.kuro9.libraend.router.config.API_PATH
 import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
 import com.kuro9.libraend.router.errorhandle.withError
 import com.kuro9.libraend.router.type.SudoLogoutInputForm
+import com.kuro9.libraend.sse.SseController
+import com.kuro9.libraend.sse.type.Notify
 import com.kuro9.libraend.ws.observer.SeatStateBroadcaster
 import com.kuro9.libraend.ws.type.SeatState
 import io.swagger.v3.oas.annotations.Operation
@@ -29,6 +31,9 @@ class AdminRoute {
 
     @Autowired
     lateinit var seatBroadcaster: SeatStateBroadcaster
+
+    @Autowired
+    lateinit var notify: SseController
 
     @PostMapping("sudo-logout")
     @Operation(description = "강제 로그아웃")
@@ -61,7 +66,10 @@ class AdminRoute {
         @RequestBody body: SudoLogoutInputForm,
         response: HttpServletResponse,
     ): BasicReturnForm<LastUsedReturnForm> =
-        runCatching { db.sudoLibrarySeatClear(sessId, body.seatId) }
+        runCatching {
+            notify.notifyClientWithSeat(body.seatId, Notify(1, "관리자에 의해 강제 퇴실 처리 되었습니다. "))
+            db.sudoLibrarySeatClear(sessId, body.seatId)
+        }
             .getOrElse { withError(it) }
             .also {
                 response.status = it.code

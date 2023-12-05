@@ -306,6 +306,28 @@ class DBHandler {
         return deskStatus
     }
 
+    @Throws(SQLException::class, SQLTimeoutException::class)
+    fun getSessId(seatId: Int): String? {
+        var userId: Int? = null
+        var sessId: String? = null
+        dataSource.connection.use {
+            it.createStatement().use {
+                it.executeQuery("SELECT last_user_id FROM seat WHERE id = $seatId").use {
+                    if (it.next()) userId = it.getInt(1)
+                }
+                if (userId == null) {
+                    println("userid got null")
+                    return null
+                }
+
+                it.executeQuery("SELECT session_key FROM user WHERE id = $userId").use {
+                    if (it.next()) sessId = it.getString(1)
+                }
+            }
+        }
+        return sessId
+    }
+
     private fun checkPWString(pw: String): Boolean = Regex("^[a-zA-Z0-9!@#\$%^&*()_+-=]{1,15}$").matches(pw)
 
 

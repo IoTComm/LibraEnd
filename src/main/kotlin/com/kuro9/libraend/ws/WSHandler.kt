@@ -3,11 +3,15 @@ package com.kuro9.libraend.ws
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.kuro9.libraend.db.DBHandler
+import com.kuro9.libraend.db.type.DeskTable
 import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
+import com.kuro9.libraend.sse.SseController
+import com.kuro9.libraend.sse.type.Notify
 import com.kuro9.libraend.ws.observer.DeskStateBroadcaster
 import com.kuro9.libraend.ws.observer.SeatStateBroadcaster
 import com.kuro9.libraend.ws.type.SeatError
 import com.kuro9.libraend.ws.type.SeatState
+import com.kuro9.libraend.ws.type.WSMessage
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.CloseStatus
@@ -21,7 +25,8 @@ import java.util.*
 class WSHandler(
     seatBroadcaster: SeatStateBroadcaster,
     deskBroadcaster: DeskStateBroadcaster,
-) : TextWebSocketHandler() {
+
+    ) : TextWebSocketHandler() {
     private val masterNodes: MutableList<WebSocketSession> = mutableListOf()
 
     @Autowired
@@ -32,6 +37,9 @@ class WSHandler(
 
     @Autowired
     lateinit var db: DBHandler
+
+    @Autowired
+    lateinit var notifyHandler: SseController
 
     init {
         seatBroadcaster.attach { broadcastToClient(it) }
@@ -47,16 +55,13 @@ class WSHandler(
             .getOrDefault(500)
         val isAdmin = (code == 200)
 
+        sendToClient(session, code)
         if (isAdmin) masterNodes.add(session)
-        else session.close(
-            CloseStatus(
-                code, when (code) {
-                    401 -> "Please re-auth your accound and try again."
-                    403 -> "You are not valid Admin!"
-                    else -> "Internal Server Error"
-                }
+        else {
+            session.close(
+                CloseStatus.POLICY_VIOLATION
             )
-        )
+        }
     }
 
     @Throws(Exception::class)
@@ -77,9 +82,10 @@ class WSHandler(
                 broadcastToClient(
                     SeatError(
                         seatState.seatId,
-                        "Seat Timeout without Logging Out!"
+                        "${seatState.seatId}번 자리 비움 상태. 자리를 정리하고 강제퇴실 처리해 주십시오. "
                     )
                 )
+                notifyHandler.notifyClientWithSeat(seatState.seatId, Notify(1, "자리 비움으로 인해 퇴실처리 되었습니다. "))
             }
             seatTimerMap[seatState.seatId] = timer
         } else {
@@ -95,15 +101,29 @@ class WSHandler(
         return session.attributes[COOKIE_SESS_KEY] as? String ?: ""
     }
 
-    fun sendToClient(session: WebSocketSession, payload: String) {
-        return session.sendMessage(TextMessage(payload))
+    fun sendToClient(session: WebSocketSession, payload: Any) {
+        val data = when (payload) {
+            is Int -> WSMessage(0, payload)
+            is SeatState -> WSMessage(1, payload)
+            is DeskTable -> WSMessage(2, payload)
+            is SeatError -> WSMessage(3, payload)
+            is String -> WSMessage(4, payload)
+            else -> WSMessage(-1, null)
+        }
+
+        val jsonString = jacksonObjectMapper().writeValueAsString(data)
+        return session.sendMessage(TextMessage(jsonString))
     }
 
     fun broadcastToClient(payload: Any) {
-        val jsonString = jacksonObjectMapper().writeValueAsString(payload)
         masterNodes.forEach {
-            sendToClient(it, jsonString)
+            sendToClient(it, payload)
         }
+    }
+
+    fun sendNotify(seatId: Int) {
+        val sessId = db.getSessId(seatId) ?: return
+        notifyHandler.notifyClient(sessId, Notify(1, "자리 비움으로 인해 퇴실처리 되었습니다. "))
     }
 
 }
