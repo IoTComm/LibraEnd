@@ -54,7 +54,7 @@
     const portString = (port === "443" || port === "80") ? "" : `:${port}`
 
     function initWS() {
-        const socket = new WebSocket(`ws://${domain}${portString}/iot-comm/ws`)
+        const socket = new WebSocket(`wss://${domain}${portString}/iot-comm/ws`)
         socket.onopen = () => {
             showNotification("계정 확인 중...")
         }
