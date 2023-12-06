@@ -90,8 +90,8 @@
             }
         })
         sse.addEventListener("user_warn", (event) => {
-            alert(event.data)
-            location.reload()
+            if (!alert(event.data))
+                location.reload()
         })
 
         sse.onmessage = (event) => {
