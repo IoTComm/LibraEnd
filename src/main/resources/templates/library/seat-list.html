@@ -41,6 +41,12 @@
     <!-- Data will be dynamically added here -->
     </tbody>
 </table>
+<button onclick="(()=>{
+    document.cookie = `sess_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+    window.location.href = '../member/login'
+})()">로그아웃
+</button>
+<button onclick="window.location.href = '../admin/manage'">관리자 페이지로 이동</button>
 
 <div id="notificationContainer"></div>
 
@@ -51,6 +57,8 @@
     const domain = window.location.hostname
     const port = window.location.port
     const portString = (port === "443" || port === "80") ? "" : `:${port}`
+    let sseTimer
+    let reconnectOffset = 1
 
     function init() {
         initSse()
@@ -59,46 +67,45 @@
 
     function initSse() {
         const sse = new EventSource('../noti/open-channel')
-        sse.onmessage = (event) => {
-            const messageData = JSON.parse(event.data)
-            console.table(messageData)
-            switch (messageData.type) {
-                case 0:
-                    const level = messageData.data.level
-                    console.log(messageData.data)
-                    switch (level) {
-                        case 0:
-                            showNotification(`Noti Connected; Server:${messageData.data.message}`)
-                            break
-                        case 1:
-                            const noti = messageData.data.message
-                            alert(noti)
-                            // location.reload()
-                            break
-                        default:
-                            break
-                    }
-                    break
-                case 1:
-                    console.log(messageData.data)
-                    const seatId = messageData.data.seat_id
-                    const isActive = messageData.data.is_active
-                    if (!isActive) {
-                        updateSeatData(seatId, false, false, true)
-                    } else {
-                        updateSeatData(seatId, true, true, userSeat !== seatId)
-                    }
+        sseTimer = setInterval(() => {
+            timeoutAction(sse)
+        }, 5 * 60 * 1000)
 
-                    break
-                default:
-                    break
+        sse.addEventListener("ping", (event) => {
+            // ping
+        })
+        sse.addEventListener("info", (event) => {
+            reconnectOffset = 1
+            showNotification(event.data)
+        })
+        sse.addEventListener("state_change", (event) => {
+            const {'seat_id': seatId, 'is_active': isActive} = JSON.parse(event.data)
+            if (userSeat !== null) {
+                document.querySelector(`#no${seatId} .is_using`).textContent
+                    = isActive ? "Yes" : "No";
+            } else if (!isActive) {
+                updateSeatData(seatId, false, false, true)
+            } else {
+                updateSeatData(seatId, true, true, userSeat !== seatId)
             }
+        })
+        sse.addEventListener("user_warn", (event) => {
+            alert(event.data)
+            location.reload()
+        })
+
+        sse.onmessage = (event) => {
+            clearInterval(sseTimer)
+            sseTimer = setInterval(() => {
+                timeoutAction(sse)
+            }, 5 * 60 * 1000)
         }
 
         sse.onerror = (event) => {
-            showNotification("알림: SSE 연결이 끊어졌습니다.")
-            console.log(event)
-            sse.close()
+            timeoutAction(sse)
+        }
+        sse.onopen = (event) => {
+            showNotification(`서버 연결됨!`)
         }
     }
 
@@ -239,6 +246,7 @@
                         switch (response.status) {
                             case 200:
                                 alert(`사용 종료됨!`);
+                                userSeat = null
                                 break;
                             default:
                                 alert("예상하지 못한 에러 발생.")
@@ -316,6 +324,15 @@
             seatTableBody.removeChild(seatTableBody.firstChild);
         }
         request()
+    }
+
+    function timeoutAction(sse) {
+        sse.close()
+        showNotification(`서버 연결 끊어짐! ${reconnectOffset}초 후 재연결 시도...`)
+        setTimeout(() => {
+            reconnectOffset = reconnectOffset >= 256 ? 256 : reconnectOffset * 2
+            initSse()
+        }, reconnectOffset * 1000)
     }
 </script>
 </body>

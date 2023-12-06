@@ -4,7 +4,6 @@ import com.kuro9.libraend.db.DBHandler
 import com.kuro9.libraend.db.type.DeskTable
 import com.kuro9.libraend.router.config.ROOT_PATH
 import com.kuro9.libraend.sse.SseController
-import com.kuro9.libraend.sse.type.Notify
 import com.kuro9.libraend.ws.SeatInactiveTimerFactory
 import com.kuro9.libraend.ws.WSHandler
 import com.kuro9.libraend.ws.observer.DeskStateBroadcaster
@@ -81,7 +80,7 @@ class HttpPollFallBack(
                 // 처음 자리를 비운 상태 -> 타이머 시작
                 val timer = timerFactory.getSeatTimer(seat.seatId) {
                     timeOutSeats.add(seat.seatId)
-                    notifyHandler.notifyClientWithSeat(seat.seatId, Notify(1, "자리 비움으로 인해 퇴실처리 되었습니다. "))
+                    notifyHandler.notifyClientWithSeat(seat.seatId, "자리 비움으로 인해 퇴실처리 되었습니다. ", SseController.USER_WARN)
                     ws.broadcastToClient(
                         SeatError(
                             seat.seatId,

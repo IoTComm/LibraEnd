@@ -279,7 +279,7 @@ class DBHandler {
                 if (deskId == 0) throw IllegalStateException("seat has desk of null!")
                 deskResult.close()
 
-                val seatResult = it.executeQuery("SELECT * FROM seat WHERE desk_id = $deskId and is_using = 0")
+                val seatResult = it.executeQuery("SELECT * FROM seat WHERE desk_id = $deskId and is_using = 1")
                 val isDeskUsing = seatResult.next()
                 // 현재 책상에서 사용중인 좌석이 없다면 false else true
                 it.executeUpdate("UPDATE desk SET state = $isDeskUsing WHERE id = $deskId")
@@ -326,6 +326,24 @@ class DBHandler {
             }
         }
         return sessId
+    }
+
+    @Throws(SQLException::class, SQLTimeoutException::class)
+    fun addDesk(id: Int): Boolean {
+        dataSource.connection.use {
+            it.createStatement().use {
+                return it.executeUpdate("INSERT INTO desk(id) VALUES ($id)") > 0
+            }
+        }
+    }
+
+    @Throws(SQLException::class, SQLTimeoutException::class)
+    fun addSeat(seatId: Int, deskId: Int): Boolean {
+        dataSource.connection.use {
+            it.createStatement().use {
+                return it.executeUpdate("INSERT INTO seat(id, desk_id) VALUES ($seatId, $deskId)") > 0
+            }
+        }
     }
 
     private fun checkPWString(pw: String): Boolean = Regex("^[a-zA-Z0-9!@#\$%^&*()_+-=]{1,15}$").matches(pw)

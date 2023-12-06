@@ -6,7 +6,6 @@ import com.kuro9.libraend.db.DBHandler
 import com.kuro9.libraend.db.type.DeskTable
 import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
 import com.kuro9.libraend.sse.SseController
-import com.kuro9.libraend.sse.type.Notify
 import com.kuro9.libraend.ws.observer.DeskStateBroadcaster
 import com.kuro9.libraend.ws.observer.SeatStateBroadcaster
 import com.kuro9.libraend.ws.type.SeatError
@@ -85,7 +84,7 @@ class WSHandler(
                         "${seatState.seatId}번 자리 비움 상태. 자리를 정리하고 강제퇴실 처리해 주십시오. "
                     )
                 )
-                notifyHandler.notifyClientWithSeat(seatState.seatId, Notify(1, "자리 비움으로 인해 퇴실처리 되었습니다. "))
+                notifyHandler.notifyClientWithSeat(seatState.seatId, "자리 비움으로 인해 퇴실처리 되었습니다. ", SseController.USER_WARN)
             }
             seatTimerMap[seatState.seatId] = timer
         } else {
@@ -123,7 +122,7 @@ class WSHandler(
 
     fun sendNotify(seatId: Int) {
         val sessId = db.getSessId(seatId) ?: return
-        notifyHandler.notifyClient(sessId, Notify(1, "자리 비움으로 인해 퇴실처리 되었습니다. "))
+        notifyHandler.notifyClient(sessId, "자리 비움으로 인해 퇴실처리 되었습니다. ", SseController.USER_WARN)
     }
 
 }
