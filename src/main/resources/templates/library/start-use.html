@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <title>좌석 사용</title>
     <script>
-        const urlParams = (new URL(window.location.href)).searchParams
-        const selectedSeat = urlParams.get("seat")
-        if (selectedSeat !== null) {
-            document.getElementById("seat-id").innerText = selectedSeat
-        }
 
         function main() {
+            const urlParams = (new URL(window.location.href)).searchParams
+            const selectedSeat = urlParams.get("seat")
+            if (selectedSeat !== null) {
+                document.getElementById("seat-id").innerText = selectedSeat
+            }
+
             document.getElementById("login-form").addEventListener("submit", function (event) {
                 event.preventDefault();  // 기본 폼 제출 동작을 막음
 
