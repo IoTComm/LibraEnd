@@ -8,4 +8,11 @@ import java.util.*
 class SeatInfoStorage {
     @get:Bean
     val seatTimerMap: HashMap<Int, Timer> = HashMap()
+
+    fun cancelTimer(seatId: Int) {
+        seatTimerMap[seatId]?.apply {
+            cancel()
+            purge()
+        }
+    }
 }

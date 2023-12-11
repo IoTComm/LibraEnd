@@ -8,6 +8,8 @@ import com.kuro9.libraend.router.config.COOKIE_SESS_KEY
 import com.kuro9.libraend.router.errorhandle.withError
 import com.kuro9.libraend.router.type.ReservationInputForm
 import com.kuro9.libraend.router.type.SeatListInputForm
+import com.kuro9.libraend.ws.SeatInactiveTimerFactory
+import com.kuro9.libraend.ws.SeatInfoStorage
 import com.kuro9.libraend.ws.WSHandler
 import com.kuro9.libraend.ws.observer.SeatStateBroadcaster
 import com.kuro9.libraend.ws.type.SeatState
@@ -34,6 +36,9 @@ class LibraryRoute {
 
     @Autowired
     lateinit var seatBroadcaster: SeatStateBroadcaster
+
+    @Autowired
+    lateinit var seatTimerStorage: SeatInfoStorage
 
     @PostMapping("login")
     @Operation(description = "자리에 앉고 사용시작 요청")
@@ -102,6 +107,9 @@ class LibraryRoute {
         response: HttpServletResponse,
     ): BasicReturnForm<Nothing> {
         val seatId: Int? = runCatching { db.getSeatId(sessId) }.getOrElse { withError(it) }.data?.seatId
+        seatId?.let {
+            seatTimerStorage.cancelTimer(it)
+        }
         return kotlin.runCatching { db.libraryLogout(sessId) }
             .getOrElse { withError(it) }
             .also {
